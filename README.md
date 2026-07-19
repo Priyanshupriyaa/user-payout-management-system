@@ -237,8 +237,9 @@ rejects status updates on a sale that isn't currently `pending`). Once `reconcil
 reconciliation query's `reconciled: false` filter excludes it from being processed again.
 
 ### 5.7 Negative/garbage input
-`Sale.earning` and `Wallet.withdrawableBalance` both have `min: 0` at the schema level.
-`Sale.status` and `Withdrawal.status` are constrained via `enum`.
+`Sale.earning` has `min: 0` at the schema level. `Wallet.withdrawableBalance` intentionally does
+**not** have a `min: 0` constraint — see §6 for why negative balances are a valid "amount owed"
+state. `Sale.status` and `Withdrawal.status` are constrained via `enum`.
 
 ---
 
@@ -259,7 +260,13 @@ reconciliation query's `reconciled: false` filter excludes it from being process
 - **No authentication/authorization layer.** Out of scope for the assignment's LLD focus, but a
   real system would need to ensure only admins can call `/sales/:id/status` and
   `/payouts/reconcile`, and users can only withdraw from their own wallet.
-
+- **Wallet balance can go negative.** If a user has already withdrawn an advance and the
+  corresponding sale is later rejected, the recovery adjustment can push
+  `withdrawableBalance` below zero. This is treated as an intentional "amount owed" state
+  rather than an error — the `min: 0` constraint was deliberately removed from the Wallet
+  schema so reconciliation never fails mid-way. The withdrawal flow's `$gte: amount` check
+  still prevents any new withdrawal while the balance is negative, so this can't be
+  exploited — it just means future advances/final payouts will first offset the debt.
 ---
 
 ## 7. API Reference

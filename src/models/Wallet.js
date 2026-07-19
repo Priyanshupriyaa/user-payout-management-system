@@ -12,7 +12,6 @@ const walletSchema = new mongoose.Schema(
     withdrawableBalance: {
       type: Number,
       default: 0,
-      min: 0,
     },
   },
   {
